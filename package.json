@@ -38,7 +38,7 @@
     "url": "https://github.com/Nexonium/tksq.git"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
