@@ -1,6 +1,6 @@
 {
   "name": "tksq",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Universal LLM token compression MCP server. Squeeze your tokens.",
   "type": "module",
   "bin": {
@@ -31,11 +31,11 @@
     "ai",
     "model-context-protocol"
   ],
-  "author": "",
+  "author": "Nexonium",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/Nexonium/tksq.git"
   },
   "engines": {
     "node": ">=20.0.0"
