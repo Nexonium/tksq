@@ -4,6 +4,7 @@ import type {
   StageResult,
   Change,
 } from "./IStage.js";
+import { isInPreservedRegion, escapeRegex } from "./StageUtils.js";
 
 export class CleanupStage implements ICompressionStage {
   readonly id = "cleanup";
@@ -87,12 +88,12 @@ export class CleanupStage implements ICompressionStage {
     const sorted = [...fillers].sort((a, b) => b.length - a.length);
 
     for (const filler of sorted) {
-      const escaped = this.escapeRegex(filler);
+      const escaped = escapeRegex(filler);
       const pattern = new RegExp(`\\b${escaped}\\b[,]?\\s*`, "gi");
 
       const matches = [...result.matchAll(new RegExp(pattern.source, pattern.flags))];
       for (const match of matches) {
-        if (!this.isInPreservedRegion(match.index!, result)) {
+        if (!isInPreservedRegion(match.index!, result)) {
           changes.push({
             original: match[0],
             replacement: "",
@@ -103,7 +104,7 @@ export class CleanupStage implements ICompressionStage {
       }
 
       result = result.replace(pattern, (matched, offset: number) => {
-        if (this.isInPreservedRegion(offset, result)) {
+        if (isInPreservedRegion(offset, result)) {
           return matched;
         }
         return "";
@@ -126,7 +127,7 @@ export class CleanupStage implements ICompressionStage {
 
       const matches = [...result.matchAll(new RegExp(pattern.source, pattern.flags))];
       for (const match of matches) {
-        if (!this.isInPreservedRegion(match.index!, result)) {
+        if (!isInPreservedRegion(match.index!, result)) {
           changes.push({
             original: match[0],
             replacement,
@@ -138,7 +139,7 @@ export class CleanupStage implements ICompressionStage {
 
       result = result.replace(regex, (matched, ...args) => {
         const offset = typeof args[args.length - 2] === "number" ? args[args.length - 2] : 0;
-        if (this.isInPreservedRegion(offset, result)) {
+        if (isInPreservedRegion(offset, result)) {
           return matched;
         }
         return replacement;
@@ -191,18 +192,4 @@ export class CleanupStage implements ICompressionStage {
     return result;
   }
 
-  private isInPreservedRegion(position: number, text: string): boolean {
-    const placeholderPattern = /\x00TKSQ_\d+\x00/g;
-    let match: RegExpExecArray | null;
-    while ((match = placeholderPattern.exec(text)) !== null) {
-      if (position >= match.index && position < match.index + match[0].length) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private escapeRegex(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
 }

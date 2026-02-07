@@ -11,17 +11,21 @@ import { PatternPreserver } from "./preserver/PatternPreserver.js";
 import { TokenCounterFactory, type ITokenCounter } from "../tokenizer/TokenCounter.js";
 import { CleanupStage } from "./stages/CleanupStage.js";
 import { SemanticStage } from "./stages/SemanticStage.js";
+import { StructuralStage } from "./stages/StructuralStage.js";
+import { ShorthandStage } from "./stages/ShorthandStage.js";
 
 const LEVEL_STAGES: Record<CompressionLevel, string[]> = {
   light: ["cleanup"],
   medium: ["cleanup", "semantic"],
-  aggressive: ["cleanup", "semantic"],
+  aggressive: ["cleanup", "semantic", "structural", "shorthand"],
 };
 
 function createStageRegistry(): Map<string, ICompressionStage> {
   const stages: ICompressionStage[] = [
     new CleanupStage(),
     new SemanticStage(),
+    new StructuralStage(),
+    new ShorthandStage(),
   ];
   const map = new Map<string, ICompressionStage>();
   for (const stage of stages) {

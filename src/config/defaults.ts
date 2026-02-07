@@ -19,9 +19,3 @@ export const DEFAULT_CONFIG: TksqConfig = {
   preservePatterns: [],
   customSubstitutions: {},
 };
-
-export const LEVEL_STAGE_MAP: Record<CompressionLevel, string[]> = {
-  light: ["cleanup"],
-  medium: ["cleanup", "semantic"],
-  aggressive: ["cleanup", "semantic"],
-};
