@@ -45,7 +45,7 @@ export class ConfigManager {
       this.config = { ...DEFAULT_CONFIG };
     }
 
-    return this.config;
+    return this.config!;
   }
 
   async save(config: TksqConfig): Promise<void> {
