@@ -257,22 +257,22 @@ const REDUNDANCIES: Array<{ pattern: RegExp; replacement: string }> = [
 // unambiguously encodes person/number in Russian.
 // Pattern: "Я" + 1st person singular verb, "Мы" + 1st person plural verb
 const PRONOUN_ELISION: Array<[RegExp, string]> = [
-  [/(?<![\\p{L}])Я\s+(думаю)/giu, "$1"],
-  [/(?<![\\p{L}])Я\s+(считаю)/giu, "$1"],
-  [/(?<![\\p{L}])Я\s+(полагаю)/giu, "$1"],
-  [/(?<![\\p{L}])Я\s+(хочу)/giu, "$1"],
-  [/(?<![\\p{L}])Я\s+(могу)/giu, "$1"],
-  [/(?<![\\p{L}])Я\s+(предлагаю)/giu, "$1"],
-  [/(?<![\\p{L}])Я\s+(рекомендую)/giu, "$1"],
-  [/(?<![\\p{L}])Я\s+(уверен)/giu, "$1"],
-  [/(?<![\\p{L}])Я\s+(уверена)/giu, "$1"],
-  [/(?<![\\p{L}])Мы\s+(думаем)/giu, "$1"],
-  [/(?<![\\p{L}])Мы\s+(считаем)/giu, "$1"],
-  [/(?<![\\p{L}])Мы\s+(полагаем)/giu, "$1"],
-  [/(?<![\\p{L}])Мы\s+(предлагаем)/giu, "$1"],
-  [/(?<![\\p{L}])Мы\s+(рекомендуем)/giu, "$1"],
-  [/(?<![\\p{L}])Мы\s+(можем)/giu, "$1"],
-  [/(?<![\\p{L}])Мы\s+(хотим)/giu, "$1"],
+  [/(?<![\p{L}])Я\s+(думаю)/giu, "$1"],
+  [/(?<![\p{L}])Я\s+(считаю)/giu, "$1"],
+  [/(?<![\p{L}])Я\s+(полагаю)/giu, "$1"],
+  [/(?<![\p{L}])Я\s+(хочу)/giu, "$1"],
+  [/(?<![\p{L}])Я\s+(могу)/giu, "$1"],
+  [/(?<![\p{L}])Я\s+(предлагаю)/giu, "$1"],
+  [/(?<![\p{L}])Я\s+(рекомендую)/giu, "$1"],
+  [/(?<![\p{L}])Я\s+(уверен)/giu, "$1"],
+  [/(?<![\p{L}])Я\s+(уверена)/giu, "$1"],
+  [/(?<![\p{L}])Мы\s+(думаем)/giu, "$1"],
+  [/(?<![\p{L}])Мы\s+(считаем)/giu, "$1"],
+  [/(?<![\p{L}])Мы\s+(полагаем)/giu, "$1"],
+  [/(?<![\p{L}])Мы\s+(предлагаем)/giu, "$1"],
+  [/(?<![\p{L}])Мы\s+(рекомендуем)/giu, "$1"],
+  [/(?<![\p{L}])Мы\s+(можем)/giu, "$1"],
+  [/(?<![\p{L}])Мы\s+(хотим)/giu, "$1"],
 ];
 
 // === Patronymic compression ===
@@ -281,7 +281,7 @@ const PRONOUN_ELISION: Array<[RegExp, string]> = [
 // Patronymics are identified by suffixes: -ович/-евич/-ич (m), -овна/-евна/-ична/-инична (f)
 // Captures: (FirstName) (Patronymic with known suffix)
 // Replaces "Имя Отчество" -> "И." + first letter of patronymic + "."
-const PATRONYMIC_PATTERN = /(?<![\\p{L}])([А-ЯЁ][а-яё]{2,})\s+([А-ЯЁ][а-яё]*(?:ович|евич|ич|овна|евна|ична|инична))(?![\\p{L}])/gu;
+const PATRONYMIC_PATTERN = /(?<![\p{L}])([А-ЯЁ][а-яё]{2,})\s+([А-ЯЁ][а-яё]*(?:ович|евич|ич|овна|евна|ична|инична))(?![\p{L}])/gu;
 
 export const russianPack: LanguagePack = {
   code: "ru",
