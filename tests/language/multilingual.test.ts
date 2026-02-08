@@ -254,6 +254,129 @@ describe("Multilingual support", () => {
     });
   });
 
+  describe("Deverbal noun compression (Wave 3)", () => {
+    it("compresses 'осуществлять контроль' to verb on aggressive", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Необходимо осуществлять контроль за процессом";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed.toLowerCase()).toContain("контролировать");
+      expect(result.compressed.toLowerCase()).not.toContain("осуществлять контроль");
+    });
+
+    it("catches conjugated auxiliary forms", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Отдел осуществляет проверку документов";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed.toLowerCase()).toContain("проверять");
+      expect(result.compressed.toLowerCase()).not.toContain("осуществляет проверку");
+    });
+
+    it("compresses 'производить оплату' to verb", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Клиент должен производить оплату в срок";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed.toLowerCase()).toContain("оплатить");
+      expect(result.compressed.toLowerCase()).not.toContain("производить оплату");
+    });
+
+    it("compresses 'проводить анализ' variants", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Мы проводим анализ данных и проводили тестирование системы";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed.toLowerCase()).toContain("анализировать");
+      expect(result.compressed.toLowerCase()).toContain("тестировать");
+    });
+
+    it("compresses 'обеспечивать выполнение'", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Руководство обеспечивает выполнение плана";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed.toLowerCase()).toContain("выполнить");
+      expect(result.compressed.toLowerCase()).not.toContain("обеспечивает выполнение");
+    });
+
+    it("compresses 'оказывать влияние'", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Фактор оказывает влияние на результат";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed.toLowerCase()).toContain("влиять");
+      expect(result.compressed.toLowerCase()).not.toContain("оказывает влияние");
+    });
+
+    it("compresses 'принимать решение'", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Комитет принимает решение по вопросу";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed.toLowerCase()).toContain("решать");
+    });
+
+    it("does not apply deverbal noun regex on medium level", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "medium",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      // Use a conjugated form that only the regex (aggressive) can catch,
+      // not the static substitution pair (medium)
+      const input = "Отдел осуществляет проверку документов";
+      const result = await pipeline.compress(input, config);
+      // On medium, the conjugated "осуществляет проверку" should NOT be replaced
+      expect(result.compressed.toLowerCase()).toContain("осуществляет проверку");
+    });
+  });
+
   describe("English compression unchanged", () => {
     it("still compresses English text correctly", async () => {
       const dict = DictionaryLoader.load("general", "en");

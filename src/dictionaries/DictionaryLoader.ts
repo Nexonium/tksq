@@ -75,6 +75,7 @@ export class DictionaryLoader {
         copulas: pack.shorthand.copulas,
         pronounElision: pack.shorthand.pronounElision,
         patronymicPattern: pack.shorthand.patronymicPattern,
+        deverbalNouns: pack.shorthand.deverbalNouns,
       },
       capitalizeAfterPeriod: pack.capitalizeAfterPeriod,
     };

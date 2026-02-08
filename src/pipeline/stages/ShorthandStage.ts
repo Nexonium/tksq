@@ -28,6 +28,9 @@ export class ShorthandStage implements ICompressionStage {
       if (shorthand.patronymicPattern) {
         result = this.compressPatronymics(result, shorthand.patronymicPattern, changes);
       }
+      if (shorthand.deverbalNouns.length > 0) {
+        result = this.applyDeverbalNouns(result, shorthand.deverbalNouns, changes);
+      }
     }
 
     if (shorthand.contractions.length > 0) {
@@ -149,6 +152,33 @@ export class ShorthandStage implements ICompressionStage {
 
       return compressed;
     });
+  }
+
+  private applyDeverbalNouns(
+    text: string,
+    patterns: Array<[RegExp, string]>,
+    changes: Change[]
+  ): string {
+    let result = text;
+
+    for (const [pattern, replacement] of patterns) {
+      result = result.replace(pattern, (matched, offset: number) => {
+        if (isInPreservedRegion(offset, result)) {
+          return matched;
+        }
+
+        changes.push({
+          original: matched,
+          replacement,
+          position: offset,
+          rule: "shorthand:deverbal-noun",
+        });
+
+        return replacement;
+      });
+    }
+
+    return result;
   }
 
   private removeArticles(

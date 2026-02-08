@@ -8,6 +8,7 @@ export interface ShorthandConfig {
   copulas: Array<[RegExp, string]>;
   pronounElision: Array<[RegExp, string]>;
   patronymicPattern: RegExp | null;
+  deverbalNouns: Array<[RegExp, string]>;
 }
 
 export interface LanguagePack {

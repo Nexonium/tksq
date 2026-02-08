@@ -73,6 +73,7 @@ export const englishPack: LanguagePack = {
     copulas: COPULA_PATTERNS,
     pronounElision: [],
     patronymicPattern: null,
+    deverbalNouns: [],
   },
 
   capitalizeAfterPeriod: /\.\s+([a-z])/g,
