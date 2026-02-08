@@ -172,6 +172,67 @@ describe("Multilingual support", () => {
       expect(result.compressed.toLowerCase()).not.toContain("данный");
     });
 
+    it("elides pronouns before 1st person verbs on aggressive", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Я думаю, что это правильно. Мы считаем это верным.";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed).not.toMatch(/\bЯ думаю\b/i);
+      expect(result.compressed.toLowerCase()).toContain("думаю");
+      expect(result.compressed).not.toMatch(/\bМы считаем\b/i);
+      expect(result.compressed.toLowerCase()).toContain("считаем");
+    });
+
+    it("does not elide pronouns on medium", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "medium",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Я думаю, что это правильно";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed).toContain("думаю");
+    });
+
+    it("compresses patronymics to initials on aggressive", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Александр Сергеевич написал это произведение";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed).toContain("А.С.");
+      expect(result.compressed).not.toContain("Александр Сергеевич");
+    });
+
+    it("compresses female patronymics", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Анна Ивановна утвердила документ";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed).toContain("А.И.");
+      expect(result.compressed).not.toContain("Анна Ивановна");
+    });
+
     it("achieves significant reduction on bureaucratic text", async () => {
       const dict = DictionaryLoader.load("general", "ru");
       const config: PipelineConfig = {

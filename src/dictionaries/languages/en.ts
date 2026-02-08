@@ -71,6 +71,8 @@ export const englishPack: LanguagePack = {
     contractions: CONTRACTIONS,
     articles: ARTICLE_PATTERN,
     copulas: COPULA_PATTERNS,
+    pronounElision: [],
+    patronymicPattern: null,
   },
 
   capitalizeAfterPeriod: /\.\s+([a-z])/g,

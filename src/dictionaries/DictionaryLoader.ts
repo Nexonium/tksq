@@ -73,6 +73,8 @@ export class DictionaryLoader {
         contractions: pack.shorthand.contractions,
         articles: pack.shorthand.articles,
         copulas: pack.shorthand.copulas,
+        pronounElision: pack.shorthand.pronounElision,
+        patronymicPattern: pack.shorthand.patronymicPattern,
       },
       capitalizeAfterPeriod: pack.capitalizeAfterPeriod,
     };

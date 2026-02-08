@@ -6,6 +6,8 @@ export interface ShorthandConfig {
   contractions: Array<[RegExp, string]>;
   articles: RegExp | null;
   copulas: Array<[RegExp, string]>;
+  pronounElision: Array<[RegExp, string]>;
+  patronymicPattern: RegExp | null;
 }
 
 export interface LanguagePack {

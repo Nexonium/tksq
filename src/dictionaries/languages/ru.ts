@@ -228,6 +228,15 @@ const REDUNDANCIES: Array<{ pattern: RegExp; replacement: string }> = [
   { pattern: /более сложный/giu, replacement: "сложнее" },
   { pattern: /более простой/giu, replacement: "проще" },
   { pattern: /более эффективный/giu, replacement: "эффективнее" },
+  { pattern: /более высокий/giu, replacement: "выше" },
+  { pattern: /более низкий/giu, replacement: "ниже" },
+  { pattern: /более широкий/giu, replacement: "шире" },
+  { pattern: /более точный/giu, replacement: "точнее" },
+  { pattern: /более надёжный/giu, replacement: "надёжнее" },
+  { pattern: /более надежный/giu, replacement: "надежнее" },
+  { pattern: /более удобный/giu, replacement: "удобнее" },
+  { pattern: /менее значительный/giu, replacement: "незначительный" },
+  { pattern: /менее важный/giu, replacement: "неважный" },
 
   // === Paired synonyms (keep shorter one) ===
   { pattern: /целиком и полностью/giu, replacement: "полностью" },
@@ -243,6 +252,37 @@ const REDUNDANCIES: Array<{ pattern: RegExp; replacement: string }> = [
   { pattern: /простой и понятный/giu, replacement: "понятный" },
 ];
 
+// === Pronoun elision ===
+// Safe only for 1st person (Я/Мы) before verbs — the verb form
+// unambiguously encodes person/number in Russian.
+// Pattern: "Я" + 1st person singular verb, "Мы" + 1st person plural verb
+const PRONOUN_ELISION: Array<[RegExp, string]> = [
+  [/(?<![\\p{L}])Я\s+(думаю)/giu, "$1"],
+  [/(?<![\\p{L}])Я\s+(считаю)/giu, "$1"],
+  [/(?<![\\p{L}])Я\s+(полагаю)/giu, "$1"],
+  [/(?<![\\p{L}])Я\s+(хочу)/giu, "$1"],
+  [/(?<![\\p{L}])Я\s+(могу)/giu, "$1"],
+  [/(?<![\\p{L}])Я\s+(предлагаю)/giu, "$1"],
+  [/(?<![\\p{L}])Я\s+(рекомендую)/giu, "$1"],
+  [/(?<![\\p{L}])Я\s+(уверен)/giu, "$1"],
+  [/(?<![\\p{L}])Я\s+(уверена)/giu, "$1"],
+  [/(?<![\\p{L}])Мы\s+(думаем)/giu, "$1"],
+  [/(?<![\\p{L}])Мы\s+(считаем)/giu, "$1"],
+  [/(?<![\\p{L}])Мы\s+(полагаем)/giu, "$1"],
+  [/(?<![\\p{L}])Мы\s+(предлагаем)/giu, "$1"],
+  [/(?<![\\p{L}])Мы\s+(рекомендуем)/giu, "$1"],
+  [/(?<![\\p{L}])Мы\s+(можем)/giu, "$1"],
+  [/(?<![\\p{L}])Мы\s+(хотим)/giu, "$1"],
+];
+
+// === Patronymic compression ===
+// Matches "Имя Отчество" and compresses to "И. Отчество"
+// Then a second pass catches "И. Отчество Фамилия" -> "И.О. Фамилия"
+// Patronymics are identified by suffixes: -ович/-евич/-ич (m), -овна/-евна/-ична/-инична (f)
+// Captures: (FirstName) (Patronymic with known suffix)
+// Replaces "Имя Отчество" -> "И." + first letter of patronymic + "."
+const PATRONYMIC_PATTERN = /(?<![\\p{L}])([А-ЯЁ][а-яё]{2,})\s+([А-ЯЁ][а-яё]*(?:ович|евич|ич|овна|евна|ична|инична))(?![\\p{L}])/gu;
+
 export const russianPack: LanguagePack = {
   code: "ru",
   script: "cyrillic",
@@ -252,9 +292,11 @@ export const russianPack: LanguagePack = {
   redundancies: REDUNDANCIES,
 
   shorthand: {
-    contractions: [],   // Russian has no contractions
-    articles: null,     // Russian has no articles
-    copulas: [],        // Russian copula patterns differ, deferred
+    contractions: [],
+    articles: null,
+    copulas: [],
+    pronounElision: PRONOUN_ELISION,
+    patronymicPattern: PATRONYMIC_PATTERN,
   },
 
   capitalizeAfterPeriod: /\.\s+([a-яёa-z])/gu,

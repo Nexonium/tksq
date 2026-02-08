@@ -22,6 +22,12 @@ export class ShorthandStage implements ICompressionStage {
       if (shorthand.articles) {
         result = this.removeArticles(result, shorthand.articles, changes);
       }
+      if (shorthand.pronounElision.length > 0) {
+        result = this.applyPronounElision(result, shorthand.pronounElision, changes);
+      }
+      if (shorthand.patronymicPattern) {
+        result = this.compressPatronymics(result, shorthand.patronymicPattern, changes);
+      }
     }
 
     if (shorthand.contractions.length > 0) {
@@ -88,6 +94,61 @@ export class ShorthandStage implements ICompressionStage {
     }
 
     return result;
+  }
+
+  private applyPronounElision(
+    text: string,
+    patterns: Array<[RegExp, string]>,
+    changes: Change[]
+  ): string {
+    let result = text;
+
+    for (const [pattern, replacement] of patterns) {
+      result = result.replace(pattern, (matched, verb: string, offset: number) => {
+        if (isInPreservedRegion(offset, result)) {
+          return matched;
+        }
+
+        const capitalizedVerb =
+          matched[0] !== matched[0].toLowerCase()
+            ? verb.charAt(0).toUpperCase() + verb.slice(1)
+            : verb;
+
+        changes.push({
+          original: matched,
+          replacement: capitalizedVerb,
+          position: offset,
+          rule: "shorthand:pronoun-elision",
+        });
+
+        return capitalizedVerb;
+      });
+    }
+
+    return result;
+  }
+
+  private compressPatronymics(
+    text: string,
+    pattern: RegExp,
+    changes: Change[]
+  ): string {
+    return text.replace(pattern, (matched, firstName: string, patronymic: string, offset: number) => {
+      if (isInPreservedRegion(offset, text)) {
+        return matched;
+      }
+
+      const compressed = `${firstName[0]}.${patronymic[0]}.`;
+
+      changes.push({
+        original: matched,
+        replacement: compressed,
+        position: offset,
+        rule: "shorthand:patronymic",
+      });
+
+      return compressed;
+    });
   }
 
   private removeArticles(
