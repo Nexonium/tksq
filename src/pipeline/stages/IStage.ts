@@ -34,6 +34,8 @@ export interface ICompressionStage {
 }
 
 export interface SubstitutionDictionary {
+  language: import("../../dictionaries/languages/types.js").LanguageCode;
+  script: import("../../dictionaries/languages/types.js").ScriptType;
   fillers: string[];
   substitutions: Map<string, string>;
   redundancies: Array<{
@@ -41,6 +43,8 @@ export interface SubstitutionDictionary {
     replacement: string;
   }>;
   abbreviations: Map<string, string>;
+  shorthand: import("../../dictionaries/languages/types.js").ShorthandConfig;
+  capitalizeAfterPeriod: RegExp;
 }
 
 export interface StageStats {

@@ -4,6 +4,8 @@ import type {
   StageResult,
   Change,
 } from "./IStage.js";
+import { isInPreservedRegion, matchCase } from "./StageUtils.js";
+import { buildWordBoundaryRegex } from "../../language/WordBoundary.js";
 
 export class SemanticStage implements ICompressionStage {
   readonly id = "semantic";
@@ -30,21 +32,21 @@ export class SemanticStage implements ICompressionStage {
     let result = text;
     const { substitutions } = options.dictionary;
 
-    // Sort entries by key length descending (match longer phrases first)
     const sorted = [...substitutions.entries()].sort(
       (a, b) => b[0].length - a[0].length
     );
 
+    const { script } = options.dictionary;
+
     for (const [phrase, replacement] of sorted) {
-      const escaped = this.escapeRegex(phrase);
-      const pattern = new RegExp(`\\b${escaped}\\b`, "gi");
+      const pattern = buildWordBoundaryRegex(phrase, script);
 
       result = result.replace(pattern, (matched, offset: number) => {
-        if (this.isInPreservedRegion(offset, result)) {
+        if (isInPreservedRegion(offset, result)) {
           return matched;
         }
 
-        const caseAdjusted = this.matchCase(matched, replacement);
+        const caseAdjusted = matchCase(matched, replacement);
 
         changes.push({
           original: matched,
@@ -74,12 +76,13 @@ export class SemanticStage implements ICompressionStage {
       (a, b) => b[0].length - a[0].length
     );
 
+    const { script } = options.dictionary;
+
     for (const [word, abbr] of sorted) {
-      const escaped = this.escapeRegex(word);
-      const pattern = new RegExp(`\\b${escaped}\\b`, "gi");
+      const pattern = buildWordBoundaryRegex(word, script);
 
       result = result.replace(pattern, (matched, offset: number) => {
-        if (this.isInPreservedRegion(offset, result)) {
+        if (isInPreservedRegion(offset, result)) {
           return matched;
         }
 
@@ -87,7 +90,7 @@ export class SemanticStage implements ICompressionStage {
           return matched;
         }
 
-        const caseAdjusted = this.matchCase(matched, abbr);
+        const caseAdjusted = matchCase(matched, abbr);
 
         changes.push({
           original: matched,
@@ -115,36 +118,10 @@ export class SemanticStage implements ICompressionStage {
     if (charBefore === "_" || charBefore === ".") return true;
     if (charAfter === "_" || charAfter === "(") return true;
 
-    // camelCase detection
     if (charBefore && /[a-z]/.test(charBefore) && /[A-Z]/.test(text[offset])) {
       return true;
     }
 
     return false;
-  }
-
-  private matchCase(original: string, replacement: string): string {
-    if (original === original.toUpperCase() && original.length > 1) {
-      return replacement.toUpperCase();
-    }
-    if (original[0] === original[0].toUpperCase() && original.length > 1) {
-      return replacement.charAt(0).toUpperCase() + replacement.slice(1);
-    }
-    return replacement;
-  }
-
-  private isInPreservedRegion(position: number, text: string): boolean {
-    const placeholderPattern = /\x00TKSQ_\d+\x00/g;
-    let match: RegExpExecArray | null;
-    while ((match = placeholderPattern.exec(text)) !== null) {
-      if (position >= match.index && position < match.index + match[0].length) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private escapeRegex(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 }
