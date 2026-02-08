@@ -13,10 +13,13 @@ export { ConfigManager } from "./config/ConfigManager.js";
 export { LanguageDetector } from "./language/LanguageDetector.js";
 export { LanguageRegistry } from "./dictionaries/languages/registry.js";
 export { buildWordBoundaryRegex } from "./language/WordBoundary.js";
+export { PhraseStore } from "./learning/PhraseStore.js";
+export { PhraseTracker } from "./learning/PhraseTracker.js";
 export type { CompressionLevel, TokenizerType, PipelineConfig, PipelineResult, CompressionStats } from "./pipeline/stages/IStage.js";
 export type { DomainName } from "./dictionaries/DictionaryLoader.js";
 export type { LanguageCode, ScriptType, LanguagePack, ShorthandConfig } from "./dictionaries/languages/types.js";
 export type { LanguageSetting, TksqConfig } from "./config/defaults.js";
+export type { LearningConfig, CandidatePattern, LearnedData } from "./learning/types.js";
 
 async function main(): Promise<void> {
   const server = createServer();

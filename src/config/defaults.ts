@@ -4,6 +4,8 @@ import type {
 } from "../pipeline/stages/IStage.js";
 import type { DomainName } from "../dictionaries/DictionaryLoader.js";
 import type { LanguageCode } from "../dictionaries/languages/types.js";
+import type { LearningConfig } from "../learning/types.js";
+import { DEFAULT_LEARNING_CONFIG } from "../learning/types.js";
 
 export type LanguageSetting = LanguageCode | "auto";
 
@@ -14,6 +16,7 @@ export interface TksqConfig {
   language: LanguageSetting;
   preservePatterns: string[];
   customSubstitutions: Record<string, string>;
+  learning: LearningConfig;
 }
 
 export const DEFAULT_CONFIG: TksqConfig = {
@@ -23,4 +26,5 @@ export const DEFAULT_CONFIG: TksqConfig = {
   language: "auto",
   preservePatterns: [],
   customSubstitutions: {},
+  learning: { ...DEFAULT_LEARNING_CONFIG },
 };

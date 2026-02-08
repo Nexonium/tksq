@@ -2,6 +2,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { DEFAULT_CONFIG, type TksqConfig } from "./defaults.js";
+import { DEFAULT_LEARNING_CONFIG } from "../learning/types.js";
 
 export class ConfigManager {
   private config: TksqConfig | null = null;
@@ -40,9 +41,13 @@ export class ConfigManager {
           ...DEFAULT_CONFIG.customSubstitutions,
           ...(parsed.customSubstitutions ?? {}),
         },
+        learning: {
+          ...DEFAULT_LEARNING_CONFIG,
+          ...(parsed.learning ?? {}),
+        },
       };
     } catch {
-      this.config = { ...DEFAULT_CONFIG };
+      this.config = { ...DEFAULT_CONFIG, learning: { ...DEFAULT_LEARNING_CONFIG } };
     }
 
     return this.config!;
