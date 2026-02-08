@@ -8,11 +8,21 @@ interface PhraseOccurrence {
 
 export class PhraseTracker {
   private sessionFrequencies = new Map<string, number>();
+  private autoPromotedCount = 0;
 
   constructor(
     private readonly store: PhraseStore,
     private readonly config: LearningConfig
   ) {}
+
+  resetSession(): void {
+    this.sessionFrequencies.clear();
+    this.autoPromotedCount = 0;
+  }
+
+  getAutoPromotedCount(): number {
+    return this.autoPromotedCount;
+  }
 
   async analyzeText(text: string): Promise<PhraseOccurrence[]> {
     if (!this.config.enabled) return [];
@@ -63,6 +73,7 @@ export class PhraseTracker {
           candidate.phrase,
           candidate.suggestedReplacement
         );
+        this.autoPromotedCount++;
       }
     }
   }

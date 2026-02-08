@@ -14,8 +14,10 @@ export class StructuralStage implements ICompressionStage {
     const changes: Change[] = [];
     let result = text;
 
-    result = this.deduplicateSentences(result, changes);
-    result = this.collapseRepeatedPhrases(result, changes);
+    if (options.contentType !== "code") {
+      result = this.deduplicateSentences(result, changes);
+      result = this.collapseRepeatedPhrases(result, changes);
+    }
 
     if (options.level === "aggressive") {
       result = this.condenseLists(result, changes);

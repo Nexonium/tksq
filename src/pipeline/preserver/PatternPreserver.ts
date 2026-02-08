@@ -1,4 +1,4 @@
-import type { PreservedRegion } from "../stages/IStage.js";
+import type { ContentType, PreservedRegion } from "../stages/IStage.js";
 
 export class PatternPreserver {
   private static readonly BUILT_IN_PATTERNS: RegExp[] = [
@@ -8,11 +8,28 @@ export class PatternPreserver {
     /"[^"]{80,}"/g,           // Long quoted strings (80+ chars, likely intentional)
   ];
 
+  private static readonly CONTEXT_PATTERNS: Partial<Record<ContentType, RegExp[]>> = {
+    code: [
+      /[\w/.\\-]+\.[a-zA-Z]{1,5}(?::\d+)?/g,   // File paths with optional line numbers
+      /\bline\s+\d+/gi,                          // "line 42" references
+    ],
+    structured: [
+      /^\s*[\[{].*[\]}]\s*$/gm,                  // JSON/XML bracket lines
+      /^"[^"]+"\s*:/gm,                          // JSON keys
+    ],
+  };
+
+  static getContextPatterns(contentType: ContentType): RegExp[] {
+    return PatternPreserver.CONTEXT_PATTERNS[contentType] ?? [];
+  }
+
   extract(
     text: string,
-    userPatterns: RegExp[]
+    userPatterns: RegExp[],
+    contentType?: ContentType
   ): { processed: string; regions: PreservedRegion[] } {
-    const allPatterns = [...PatternPreserver.BUILT_IN_PATTERNS, ...userPatterns];
+    const contextPatterns = contentType ? PatternPreserver.getContextPatterns(contentType) : [];
+    const allPatterns = [...PatternPreserver.BUILT_IN_PATTERNS, ...contextPatterns, ...userPatterns];
     const regions: PreservedRegion[] = [];
 
     // Collect all matches

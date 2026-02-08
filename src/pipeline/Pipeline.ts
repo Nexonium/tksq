@@ -57,7 +57,8 @@ export class Pipeline {
     // Extract preserved regions BEFORE pipeline
     const { processed: workingText, regions } = this.preserver.extract(
       text,
-      config.preservePatterns
+      config.preservePatterns,
+      config.contentType
     );
 
     let current = workingText;
@@ -70,6 +71,7 @@ export class Pipeline {
 
       const result = stage.process(current, {
         level: config.level,
+        contentType: config.contentType ?? "auto",
         preservedRegions: regions,
         dictionary: config.dictionary,
       });

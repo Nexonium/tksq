@@ -6,6 +6,7 @@ import { createGeneralDictionary } from "../../src/dictionaries/domains/general.
 function makeOptions(level: "light" | "medium" | "aggressive" = "aggressive"): StageOptions {
   return {
     level,
+    contentType: "auto",
     preservedRegions: [],
     dictionary: createGeneralDictionary(),
   };

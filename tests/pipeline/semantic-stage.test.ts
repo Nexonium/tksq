@@ -12,7 +12,7 @@ function makeOptions(
     domain === "programming"
       ? createProgrammingDictionary()
       : createGeneralDictionary();
-  return { level, preservedRegions: [], dictionary };
+  return { level, contentType: "auto", preservedRegions: [], dictionary };
 }
 
 describe("SemanticStage", () => {

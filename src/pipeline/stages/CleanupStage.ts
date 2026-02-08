@@ -82,6 +82,10 @@ export class CleanupStage implements ICompressionStage {
     options: StageOptions,
     changes: Change[]
   ): string {
+    if (options.contentType === "code" || options.contentType === "structured") {
+      return text;
+    }
+
     let result = text;
     const { fillers } = options.dictionary;
 
@@ -152,6 +156,10 @@ export class CleanupStage implements ICompressionStage {
   }
 
   private cleanupPunctuation(text: string, options: StageOptions, changes: Change[]): string {
+    if (options.contentType === "code" || options.contentType === "structured") {
+      return text;
+    }
+
     let result = text;
 
     // Fix double periods

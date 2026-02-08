@@ -6,6 +6,7 @@ import { DictionaryLoader } from "../../src/dictionaries/DictionaryLoader.js";
 function makeOptions(level: "light" | "medium" | "aggressive" = "aggressive"): StageOptions {
   return {
     level,
+    contentType: "auto",
     preservedRegions: [],
     dictionary: DictionaryLoader.load("general", "en"),
   };

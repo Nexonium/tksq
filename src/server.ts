@@ -12,6 +12,7 @@ import type { LanguageCode } from "./dictionaries/languages/types.js";
 import type { LanguageSetting } from "./config/defaults.js";
 import type {
   CompressionLevel,
+  ContentType,
   TokenizerType,
   PipelineConfig,
 } from "./pipeline/stages/IStage.js";
@@ -26,7 +27,7 @@ function resolveLanguage(setting: LanguageSetting, text: string): LanguageCode {
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "tksq",
-    version: "1.3.1",
+    version: "1.4.0",
   });
 
   const pipeline = new Pipeline();
@@ -100,6 +101,12 @@ export function createServer(): McpServer {
         .describe(
           "Additional regex patterns for text regions to preserve (code blocks, URLs already preserved by default)"
         ),
+      context: z
+        .enum(["code", "prose", "structured", "auto"])
+        .optional()
+        .describe(
+          "Content type context. auto=default, code=preserve code patterns, prose=full compression, structured=preserve JSON/XML structure"
+        ),
     },
     async (args) => {
       try {
@@ -110,6 +117,7 @@ export function createServer(): McpServer {
         const tokenizer: TokenizerType = args.tokenizer ?? userConfig.tokenizer;
         const langSetting: LanguageSetting = args.language ?? userConfig.language;
         const language = resolveLanguage(langSetting, args.text);
+        const contentType: ContentType = args.context ?? "auto";
 
         // Merge promoted patterns with user custom substitutions
         const customSubs = await getPromotedSubstitutions(
@@ -134,6 +142,7 @@ export function createServer(): McpServer {
 
         const pipelineConfig: PipelineConfig = {
           level,
+          contentType,
           preservePatterns: userPatterns,
           tokenizer,
           dictionary,
@@ -171,7 +180,7 @@ export function createServer(): McpServer {
           `Tokens: ${result.stats.originalTokens} -> ${result.stats.compressedTokens} (-${result.stats.reductionPercent}%)`,
           `Chars: ${result.stats.originalChars} -> ${result.stats.compressedChars}`,
           `Tokenizer: ${result.stats.tokenizer}`,
-          `Level: ${level} | Domain: ${domain} | Language: ${language}`,
+          `Level: ${level} | Domain: ${domain} | Language: ${language} | Context: ${contentType}`,
           `Changes: ${result.allChanges.length}`,
           "Stages:",
           stageBreakdown,
@@ -180,6 +189,11 @@ export function createServer(): McpServer {
         // Add learning suggestions footer
         if (userConfig.learning.enabled) {
           const t = await getTracker();
+          const autoPromoted = t.getAutoPromotedCount();
+          if (autoPromoted > 0) {
+            output.push("");
+            output.push(`Auto-promoted: ${autoPromoted} pattern(s) this session.`);
+          }
           const suggestions = await t.getReadySuggestions();
           if (suggestions.length > 0) {
             output.push("");
@@ -578,10 +592,10 @@ export function createServer(): McpServer {
       "Use 'stats' action to see compression statistics.",
     {
       action: z
-        .enum(["list", "promote", "reject", "add", "reset", "stats"])
+        .enum(["list", "promote", "reject", "add", "reset", "reset_session", "stats"])
         .describe(
           "Action: list=show candidates, promote=activate a candidate, reject=remove candidate, " +
-            "add=manually add a pattern, reset=clear all learned data, stats=show statistics"
+            "add=manually add a pattern, reset=clear all learned data, reset_session=clear session frequencies, stats=show statistics"
         ),
       phrase: z
         .string()
@@ -737,6 +751,19 @@ export function createServer(): McpServer {
                 {
                   type: "text",
                   text: "Learning data reset. All candidates, promoted patterns, and stats cleared.",
+                },
+              ],
+            };
+          }
+
+          case "reset_session": {
+            const t = await getTracker();
+            t.resetSession();
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: "Session frequencies cleared. Phrase tracking will start fresh for this task.",
                 },
               ],
             };
@@ -987,6 +1014,12 @@ export function createServer(): McpServer {
         .describe(
           "Language. auto=detect (default), en=English, ru=Russian"
         ),
+      context: z
+        .enum(["code", "prose", "structured", "auto"])
+        .optional()
+        .describe(
+          "Content type context. auto=default, code=preserve code patterns, prose=full compression, structured=preserve JSON/XML structure"
+        ),
     },
     async (args) => {
       try {
@@ -997,6 +1030,7 @@ export function createServer(): McpServer {
         const tokenizer: TokenizerType = userConfig.tokenizer;
         const langSetting: LanguageSetting = args.language ?? userConfig.language;
         const language = resolveLanguage(langSetting, args.text);
+        const contentType: ContentType = args.context ?? "auto";
 
         const customSubs = await getPromotedSubstitutions(
           userConfig.customSubstitutions
@@ -1018,6 +1052,7 @@ export function createServer(): McpServer {
 
         const pipelineConfig: PipelineConfig = {
           level,
+          contentType,
           preservePatterns,
           tokenizer,
           dictionary,

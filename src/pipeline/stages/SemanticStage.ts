@@ -15,9 +15,11 @@ export class SemanticStage implements ICompressionStage {
     const changes: Change[] = [];
     let result = text;
 
-    result = this.applySubstitutions(result, options, changes);
+    if (options.contentType !== "structured") {
+      result = this.applySubstitutions(result, options, changes);
+    }
 
-    if (options.level !== "light") {
+    if (options.level !== "light" && options.contentType !== "structured" && options.contentType !== "code") {
       result = this.applyAbbreviations(result, options, changes);
     }
 

@@ -15,7 +15,9 @@ export class ShorthandStage implements ICompressionStage {
     let result = text;
     const { shorthand } = options.dictionary;
 
-    if (options.level === "aggressive") {
+    const isProse = options.contentType === "prose" || options.contentType === "auto";
+
+    if (options.level === "aggressive" && isProse) {
       if (shorthand.copulas.length > 0) {
         result = this.simplifyCopulas(result, shorthand.copulas, changes);
       }
@@ -33,7 +35,7 @@ export class ShorthandStage implements ICompressionStage {
       }
     }
 
-    if (shorthand.contractions.length > 0) {
+    if (shorthand.contractions.length > 0 && isProse) {
       result = this.applyContractions(result, shorthand.contractions, changes);
     }
 

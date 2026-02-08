@@ -23,6 +23,7 @@ export interface PreservedRegion {
 
 export interface StageOptions {
   level: CompressionLevel;
+  contentType: ContentType;
   preservedRegions: PreservedRegion[];
   dictionary: SubstitutionDictionary;
 }
@@ -67,6 +68,7 @@ export interface CompressionStats {
 
 export interface PipelineConfig {
   level: CompressionLevel;
+  contentType?: ContentType;
   stages?: string[];
   preservePatterns: RegExp[];
   tokenizer: TokenizerType;
