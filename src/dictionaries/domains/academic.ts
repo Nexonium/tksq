@@ -87,9 +87,8 @@ export function createAcademicDictionary(): SubstitutionDictionary {
   }
 
   return {
-    fillers: general.fillers,
+    ...general,
     substitutions: general.substitutions,
-    redundancies: general.redundancies,
     abbreviations,
   };
 }

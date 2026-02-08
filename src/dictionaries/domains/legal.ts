@@ -82,9 +82,8 @@ export function createLegalDictionary(): SubstitutionDictionary {
   }
 
   return {
-    fillers: general.fillers,
+    ...general,
     substitutions: general.substitutions,
-    redundancies: general.redundancies,
     abbreviations,
   };
 }
