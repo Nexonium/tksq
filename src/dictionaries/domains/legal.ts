@@ -1,7 +1,7 @@
 import type { SubstitutionDictionary } from "../../pipeline/stages/IStage.js";
 import { createGeneralDictionary } from "./general.js";
 
-const LEGAL_ABBREVIATIONS: Array<[string, string]> = [
+export const LEGAL_ABBREVIATIONS: Array<[string, string]> = [
   ["agreement", "agmt"],
   ["amendment", "amdt"],
   ["article", "art"],
@@ -32,7 +32,7 @@ const LEGAL_ABBREVIATIONS: Array<[string, string]> = [
   ["transaction", "txn"],
 ];
 
-const LEGAL_SUBSTITUTIONS: Array<[string, string]> = [
+export const LEGAL_SUBSTITUTIONS: Array<[string, string]> = [
   ["in accordance with", "per"],
   ["pursuant to", "per"],
   ["with respect to", "regarding"],

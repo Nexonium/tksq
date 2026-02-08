@@ -4,7 +4,8 @@ import type {
   StageResult,
   Change,
 } from "./IStage.js";
-import { isInPreservedRegion, escapeRegex } from "./StageUtils.js";
+import { isInPreservedRegion } from "./StageUtils.js";
+import { buildWordBoundaryRegex } from "../../language/WordBoundary.js";
 
 export class CleanupStage implements ICompressionStage {
   readonly id = "cleanup";
@@ -17,7 +18,7 @@ export class CleanupStage implements ICompressionStage {
     result = this.normalizeWhitespace(result, changes);
     result = this.removeFillers(result, options, changes);
     result = this.removeRedundancies(result, options, changes);
-    result = this.cleanupPunctuation(result, changes);
+    result = this.cleanupPunctuation(result, options, changes);
     result = this.finalWhitespacePass(result);
 
     return { text: result, changes };
@@ -88,8 +89,9 @@ export class CleanupStage implements ICompressionStage {
     const sorted = [...fillers].sort((a, b) => b.length - a.length);
 
     for (const filler of sorted) {
-      const escaped = escapeRegex(filler);
-      const pattern = new RegExp(`\\b${escaped}\\b[,]?\\s*`, "gi");
+      const baseRegex = buildWordBoundaryRegex(filler, options.dictionary.script);
+      // Extend pattern to also consume trailing comma and whitespace
+      const pattern = new RegExp(baseRegex.source + `[,]?\\s*`, baseRegex.flags);
 
       const matches = [...result.matchAll(new RegExp(pattern.source, pattern.flags))];
       for (const match of matches) {
@@ -149,7 +151,7 @@ export class CleanupStage implements ICompressionStage {
     return result;
   }
 
-  private cleanupPunctuation(text: string, changes: Change[]): string {
+  private cleanupPunctuation(text: string, options: StageOptions, changes: Change[]): string {
     let result = text;
 
     // Fix double periods
@@ -173,8 +175,9 @@ export class CleanupStage implements ICompressionStage {
       changes.push({ original: ",,", replacement: ",", position: 0, rule: "cleanup:double-comma" });
     }
 
-    // Capitalize after period
-    result = result.replace(/\.\s+([a-z])/g, (_match, letter: string) => {
+    // Capitalize after period (language-aware)
+    const capPattern = options.dictionary.capitalizeAfterPeriod;
+    result = result.replace(capPattern, (_match, letter: string) => {
       return ". " + letter.toUpperCase();
     });
 

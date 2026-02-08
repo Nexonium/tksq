@@ -10,8 +10,13 @@ export { DictionaryLoader } from "./dictionaries/DictionaryLoader.js";
 export { TokenCounterFactory } from "./tokenizer/TokenCounter.js";
 export { TextDiffer } from "./diff/TextDiffer.js";
 export { ConfigManager } from "./config/ConfigManager.js";
+export { LanguageDetector } from "./language/LanguageDetector.js";
+export { LanguageRegistry } from "./dictionaries/languages/registry.js";
+export { buildWordBoundaryRegex } from "./language/WordBoundary.js";
 export type { CompressionLevel, TokenizerType, PipelineConfig, PipelineResult, CompressionStats } from "./pipeline/stages/IStage.js";
 export type { DomainName } from "./dictionaries/DictionaryLoader.js";
+export type { LanguageCode, ScriptType, LanguagePack, ShorthandConfig } from "./dictionaries/languages/types.js";
+export type { LanguageSetting, TksqConfig } from "./config/defaults.js";
 
 async function main(): Promise<void> {
   const server = createServer();

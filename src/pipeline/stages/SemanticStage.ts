@@ -4,7 +4,8 @@ import type {
   StageResult,
   Change,
 } from "./IStage.js";
-import { isInPreservedRegion, escapeRegex, matchCase } from "./StageUtils.js";
+import { isInPreservedRegion, matchCase } from "./StageUtils.js";
+import { buildWordBoundaryRegex } from "../../language/WordBoundary.js";
 
 export class SemanticStage implements ICompressionStage {
   readonly id = "semantic";
@@ -35,9 +36,10 @@ export class SemanticStage implements ICompressionStage {
       (a, b) => b[0].length - a[0].length
     );
 
+    const { script } = options.dictionary;
+
     for (const [phrase, replacement] of sorted) {
-      const escaped = escapeRegex(phrase);
-      const pattern = new RegExp(`\\b${escaped}\\b`, "gi");
+      const pattern = buildWordBoundaryRegex(phrase, script);
 
       result = result.replace(pattern, (matched, offset: number) => {
         if (isInPreservedRegion(offset, result)) {
@@ -74,9 +76,10 @@ export class SemanticStage implements ICompressionStage {
       (a, b) => b[0].length - a[0].length
     );
 
+    const { script } = options.dictionary;
+
     for (const [word, abbr] of sorted) {
-      const escaped = escapeRegex(word);
-      const pattern = new RegExp(`\\b${escaped}\\b`, "gi");
+      const pattern = buildWordBoundaryRegex(word, script);
 
       result = result.replace(pattern, (matched, offset: number) => {
         if (isInPreservedRegion(offset, result)) {

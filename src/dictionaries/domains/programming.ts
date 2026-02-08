@@ -1,7 +1,7 @@
 import type { SubstitutionDictionary } from "../../pipeline/stages/IStage.js";
 import { createGeneralDictionary } from "./general.js";
 
-const PROGRAMMING_ABBREVIATIONS: Array<[string, string]> = [
+export const PROGRAMMING_ABBREVIATIONS: Array<[string, string]> = [
   ["function", "fn"],
   ["implementation", "impl"],
   ["configuration", "config"],
@@ -95,7 +95,7 @@ const PROGRAMMING_ABBREVIATIONS: Array<[string, string]> = [
   ["request", "req"],
 ];
 
-const PROGRAMMING_SUBSTITUTIONS: Array<[string, string]> = [
+export const PROGRAMMING_SUBSTITUTIONS: Array<[string, string]> = [
   ["in order to implement", "to implement"],
   ["is responsible for", "handles"],
   ["is used to", "does"],

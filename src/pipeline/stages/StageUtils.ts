@@ -27,6 +27,7 @@ export function escapeRegex(str: string): string {
 
 /**
  * Match the case style of the original text in the replacement.
+ * Works with both Latin and Cyrillic characters.
  * - ALL CAPS -> ALL CAPS replacement
  * - Title Case -> Title Case replacement
  * - lowercase -> lowercase replacement
@@ -35,7 +36,11 @@ export function matchCase(original: string, replacement: string): string {
   if (original === original.toUpperCase() && original.length > 1) {
     return replacement.toUpperCase();
   }
-  if (original[0] === original[0].toUpperCase() && original.length > 1) {
+  // Unicode-aware: check if first char is uppercase (works for Cyrillic too)
+  if (
+    original.length > 0 &&
+    original[0] !== original[0].toLowerCase()
+  ) {
     return replacement.charAt(0).toUpperCase() + replacement.slice(1);
   }
   return replacement;

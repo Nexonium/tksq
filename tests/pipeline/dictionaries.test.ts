@@ -38,7 +38,7 @@ describe("DictionaryLoader", () => {
   });
 
   it("applies custom substitutions", () => {
-    const dict = DictionaryLoader.load("general", {
+    const dict = DictionaryLoader.load("general", "en", {
       "my custom phrase": "MCP",
     });
     expect(dict.substitutions.get("my custom phrase")).toBe("MCP");

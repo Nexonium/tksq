@@ -1,7 +1,7 @@
 import type { SubstitutionDictionary } from "../../pipeline/stages/IStage.js";
 import { createGeneralDictionary } from "./general.js";
 
-const ACADEMIC_ABBREVIATIONS: Array<[string, string]> = [
+export const ACADEMIC_ABBREVIATIONS: Array<[string, string]> = [
   ["approximately", "approx"],
   ["bibliography", "biblio"],
   ["chapter", "ch"],
@@ -34,7 +34,7 @@ const ACADEMIC_ABBREVIATIONS: Array<[string, string]> = [
   ["volume", "vol"],
 ];
 
-const ACADEMIC_SUBSTITUTIONS: Array<[string, string]> = [
+export const ACADEMIC_SUBSTITUTIONS: Array<[string, string]> = [
   ["it has been demonstrated that", "studies show"],
   ["it has been shown that", "evidence shows"],
   ["it is widely accepted that", "widely accepted:"],

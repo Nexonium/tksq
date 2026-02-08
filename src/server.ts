@@ -5,16 +5,26 @@ import { DictionaryLoader, type DomainName } from "./dictionaries/DictionaryLoad
 import { ConfigManager } from "./config/ConfigManager.js";
 import { TextDiffer } from "./diff/TextDiffer.js";
 import { TokenCounterFactory } from "./tokenizer/TokenCounter.js";
+import { LanguageDetector } from "./language/LanguageDetector.js";
+import type { LanguageCode } from "./dictionaries/languages/types.js";
+import type { LanguageSetting } from "./config/defaults.js";
 import type {
   CompressionLevel,
   TokenizerType,
   PipelineConfig,
 } from "./pipeline/stages/IStage.js";
 
+function resolveLanguage(setting: LanguageSetting, text: string): LanguageCode {
+  if (setting === "auto") {
+    return LanguageDetector.detect(text);
+  }
+  return setting;
+}
+
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "tksq",
-    version: "1.1.0",
+    version: "1.2.0",
   });
 
   const pipeline = new Pipeline();
@@ -43,6 +53,12 @@ export function createServer(): McpServer {
         .describe(
           "Dictionary domain. general=prose (default), programming=code, legal=contracts, academic=papers"
         ),
+      language: z
+        .enum(["auto", "en", "ru"])
+        .optional()
+        .describe(
+          "Language for compression dictionaries. auto=detect from text (default), en=English, ru=Russian"
+        ),
       tokenizer: z
         .enum(["cl100k_base", "o200k_base", "approximate"])
         .optional()
@@ -63,9 +79,12 @@ export function createServer(): McpServer {
         const level: CompressionLevel = args.level ?? userConfig.level;
         const domain: DomainName = args.domain ?? userConfig.domain;
         const tokenizer: TokenizerType = args.tokenizer ?? userConfig.tokenizer;
+        const langSetting: LanguageSetting = args.language ?? userConfig.language;
+        const language = resolveLanguage(langSetting, args.text);
 
         const dictionary = DictionaryLoader.load(
           domain,
+          language,
           Object.keys(userConfig.customSubstitutions).length > 0
             ? userConfig.customSubstitutions
             : undefined
@@ -104,7 +123,7 @@ export function createServer(): McpServer {
           `Tokens: ${result.stats.originalTokens} -> ${result.stats.compressedTokens} (-${result.stats.reductionPercent}%)`,
           `Chars: ${result.stats.originalChars} -> ${result.stats.compressedChars}`,
           `Tokenizer: ${result.stats.tokenizer}`,
-          `Level: ${level} | Domain: ${domain}`,
+          `Level: ${level} | Domain: ${domain} | Language: ${language}`,
           `Changes: ${result.allChanges.length}`,
           "Stages:",
           stageBreakdown,
@@ -201,6 +220,12 @@ export function createServer(): McpServer {
         .enum(["general", "programming", "legal", "academic"])
         .optional()
         .describe("Dictionary domain (only used if compressed is omitted)"),
+      language: z
+        .enum(["auto", "en", "ru"])
+        .optional()
+        .describe(
+          "Language for compression dictionaries (only used if compressed is omitted)"
+        ),
     },
     async (args) => {
       try {
@@ -213,9 +238,12 @@ export function createServer(): McpServer {
           const userConfig = await configManager.load();
           const level: CompressionLevel = args.level ?? userConfig.level;
           const domain: DomainName = args.domain ?? userConfig.domain;
+          const langSetting: LanguageSetting = args.language ?? userConfig.language;
+          const language = resolveLanguage(langSetting, args.original);
 
           const dictionary = DictionaryLoader.load(
             domain,
+            language,
             Object.keys(userConfig.customSubstitutions).length > 0
               ? userConfig.customSubstitutions
               : undefined
@@ -274,6 +302,12 @@ export function createServer(): McpServer {
         .enum(["general", "programming", "legal", "academic"])
         .optional()
         .describe("Dictionary domain (default: general)"),
+      language: z
+        .enum(["auto", "en", "ru"])
+        .optional()
+        .describe(
+          "Language for compression dictionaries. auto=detect from text (default), en=English, ru=Russian"
+        ),
       tokenizer: z
         .enum(["cl100k_base", "o200k_base", "approximate"])
         .optional()
@@ -284,8 +318,10 @@ export function createServer(): McpServer {
         const userConfig = await configManager.load();
         const domain: DomainName = args.domain ?? userConfig.domain;
         const tokenizer: TokenizerType = args.tokenizer ?? userConfig.tokenizer;
+        const langSetting: LanguageSetting = args.language ?? userConfig.language;
+        const language = resolveLanguage(langSetting, args.text);
 
-        const dictionary = DictionaryLoader.load(domain);
+        const dictionary = DictionaryLoader.load(domain, language);
         const levels: CompressionLevel[] = ["light", "medium", "aggressive"];
         const rows: string[] = [];
 
@@ -293,7 +329,7 @@ export function createServer(): McpServer {
         const originalTokens = counter.count(args.text);
 
         rows.push(`Original: ${originalTokens} tokens (${args.text.length} chars)`);
-        rows.push(`Domain: ${domain} | Tokenizer: ${tokenizer}`);
+        rows.push(`Domain: ${domain} | Language: ${language} | Tokenizer: ${tokenizer}`);
         rows.push("");
         rows.push("Level        | Tokens | Reduction | Stages");
         rows.push("-------------|--------|-----------|-------");
@@ -362,6 +398,12 @@ export function createServer(): McpServer {
         .enum(["general", "programming", "legal", "academic"])
         .optional()
         .describe("Default dictionary domain"),
+      language: z
+        .enum(["auto", "en", "ru"])
+        .optional()
+        .describe(
+          "Default language. auto=detect from text (default), en=English, ru=Russian"
+        ),
       tokenizer: z
         .enum(["cl100k_base", "o200k_base", "approximate"])
         .optional()
@@ -380,6 +422,7 @@ export function createServer(): McpServer {
         const hasUpdates =
           args.level !== undefined ||
           args.domain !== undefined ||
+          args.language !== undefined ||
           args.tokenizer !== undefined ||
           args.preserve_patterns !== undefined ||
           args.custom_substitutions !== undefined;
@@ -391,6 +434,7 @@ export function createServer(): McpServer {
             "",
             `Level: ${config.level}`,
             `Domain: ${config.domain}`,
+            `Language: ${config.language}`,
             `Tokenizer: ${config.tokenizer}`,
             `Preserve patterns: ${config.preservePatterns.length > 0 ? config.preservePatterns.join(", ") : "(none)"}`,
             `Custom substitutions: ${Object.keys(config.customSubstitutions).length}`,
@@ -415,6 +459,7 @@ export function createServer(): McpServer {
         const partial: Record<string, unknown> = {};
         if (args.level !== undefined) partial.level = args.level;
         if (args.domain !== undefined) partial.domain = args.domain;
+        if (args.language !== undefined) partial.language = args.language;
         if (args.tokenizer !== undefined) partial.tokenizer = args.tokenizer;
         if (args.preserve_patterns !== undefined)
           partial.preservePatterns = args.preserve_patterns;
@@ -428,6 +473,7 @@ export function createServer(): McpServer {
           "",
           `Level: ${updated.level}`,
           `Domain: ${updated.domain}`,
+          `Language: ${updated.language}`,
           `Tokenizer: ${updated.tokenizer}`,
           `Preserve patterns: ${updated.preservePatterns.length > 0 ? updated.preservePatterns.join(", ") : "(none)"}`,
           `Custom substitutions: ${Object.keys(updated.customSubstitutions).length}`,

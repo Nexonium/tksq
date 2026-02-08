@@ -1,0 +1,130 @@
+import { describe, it, expect } from "vitest";
+import { Pipeline } from "../../src/pipeline/Pipeline.js";
+import { DictionaryLoader } from "../../src/dictionaries/DictionaryLoader.js";
+import { LanguageRegistry } from "../../src/dictionaries/languages/registry.js";
+import type { PipelineConfig } from "../../src/pipeline/stages/IStage.js";
+
+describe("Multilingual support", () => {
+  const pipeline = new Pipeline();
+
+  describe("LanguageRegistry", () => {
+    it("has English and Russian packs", () => {
+      const langs = LanguageRegistry.availableLanguages();
+      expect(langs).toContain("en");
+      expect(langs).toContain("ru");
+    });
+
+    it("returns English pack with latin script", () => {
+      const pack = LanguageRegistry.get("en");
+      expect(pack.code).toBe("en");
+      expect(pack.script).toBe("latin");
+      expect(pack.fillers.length).toBeGreaterThan(0);
+    });
+
+    it("returns Russian pack with cyrillic script", () => {
+      const pack = LanguageRegistry.get("ru");
+      expect(pack.code).toBe("ru");
+      expect(pack.script).toBe("cyrillic");
+      expect(pack.fillers.length).toBeGreaterThan(0);
+    });
+
+    it("throws on unknown language", () => {
+      expect(() => LanguageRegistry.get("fr" as any)).toThrow("Unknown language");
+    });
+  });
+
+  describe("DictionaryLoader with language", () => {
+    it("loads English general dictionary", () => {
+      const dict = DictionaryLoader.load("general", "en");
+      expect(dict.language).toBe("en");
+      expect(dict.script).toBe("latin");
+      expect(dict.shorthand.contractions.length).toBeGreaterThan(0);
+    });
+
+    it("loads Russian general dictionary", () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      expect(dict.language).toBe("ru");
+      expect(dict.script).toBe("cyrillic");
+      expect(dict.fillers.length).toBeGreaterThan(0);
+      expect(dict.shorthand.contractions.length).toBe(0);
+      expect(dict.shorthand.articles).toBeNull();
+    });
+
+    it("applies domain overlay to Russian", () => {
+      const dict = DictionaryLoader.load("programming", "ru");
+      expect(dict.language).toBe("ru");
+      expect(dict.abbreviations.size).toBeGreaterThan(0);
+      expect(dict.abbreviations.get("function")).toBe("fn");
+    });
+  });
+
+  describe("Russian text compression", () => {
+    it("removes Russian filler phrases", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "light",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Как бы это важный момент в нашей работе";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed).not.toContain("как бы");
+    });
+
+    it("applies Russian substitutions on medium", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "medium",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "В настоящее время мы работаем над проектом";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed).not.toContain("в настоящее время");
+      expect(result.compressed.toLowerCase()).toContain("сейчас");
+    });
+
+    it("achieves non-zero reduction on Russian text", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input =
+        "В настоящее время, по сути, необходимо отметить, что данный проект " +
+        "как бы представляет собой достаточно важный элемент. " +
+        "Тем не менее, в конечном счёте, с точки зрения качества, " +
+        "на самом деле результат является положительным.";
+
+      const result = await pipeline.compress(input, config);
+      expect(result.stats.reductionPercent).toBeGreaterThan(0);
+    });
+  });
+
+  describe("English compression unchanged", () => {
+    it("still compresses English text correctly", async () => {
+      const dict = DictionaryLoader.load("general", "en");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input =
+        "Basically, in order to understand this, it is important to note that " +
+        "the implementation will not work without the necessary changes.";
+
+      const result = await pipeline.compress(input, config);
+      expect(result.stats.reductionPercent).toBeGreaterThan(0);
+      expect(result.compressed).toContain("won't");
+    });
+  });
+});

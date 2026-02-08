@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { ShorthandStage } from "../../src/pipeline/stages/ShorthandStage.js";
 import type { StageOptions } from "../../src/pipeline/stages/IStage.js";
-import { createGeneralDictionary } from "../../src/dictionaries/domains/general.js";
+import { DictionaryLoader } from "../../src/dictionaries/DictionaryLoader.js";
 
 function makeOptions(level: "light" | "medium" | "aggressive" = "aggressive"): StageOptions {
   return {
     level,
     preservedRegions: [],
-    dictionary: createGeneralDictionary(),
+    dictionary: DictionaryLoader.load("general", "en"),
   };
 }
 
