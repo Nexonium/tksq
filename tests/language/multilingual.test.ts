@@ -106,6 +106,91 @@ describe("Multilingual support", () => {
       const result = await pipeline.compress(input, config);
       expect(result.stats.reductionPercent).toBeGreaterThan(0);
     });
+
+    it("applies standard Russian abbreviations", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "medium",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Нам нужны данные, то есть таблицы и так далее";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed).toContain("т.е.");
+      expect(result.compressed).toContain("т.д.");
+    });
+
+    it("simplifies bureaucratic prepositions", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "medium",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "В связи с тем что проект задерживается, при условии что бюджет позволяет";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed.toLowerCase()).toContain("т.к.");
+      expect(result.compressed.toLowerCase()).toContain("если");
+      expect(result.compressed.toLowerCase()).not.toContain("в связи с тем что");
+    });
+
+    it("reduces paired synonyms (pleonasms)", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "medium",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Задача целиком и полностью выполнена, результат самый лучший";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed).not.toContain("целиком и полностью");
+      expect(result.compressed).toContain("полностью");
+      expect(result.compressed).not.toContain("самый лучший");
+      expect(result.compressed).toContain("лучший");
+    });
+
+    it("replaces bureaucratic adjectives", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "medium",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input = "Вышеуказанный документ описывает данный процесс";
+      const result = await pipeline.compress(input, config);
+      expect(result.compressed.toLowerCase()).toContain("указанный");
+      expect(result.compressed.toLowerCase()).not.toContain("вышеуказанный");
+      expect(result.compressed.toLowerCase()).toContain("этот");
+      expect(result.compressed.toLowerCase()).not.toContain("данный");
+    });
+
+    it("achieves significant reduction on bureaucratic text", async () => {
+      const dict = DictionaryLoader.load("general", "ru");
+      const config: PipelineConfig = {
+        level: "aggressive",
+        preservePatterns: [],
+        tokenizer: "approximate",
+        dictionary: dict,
+      };
+
+      const input =
+        "В связи с тем что в настоящее время осуществление контроля " +
+        "за выполнением вышеуказанных мероприятий является одним из " +
+        "наиболее важных направлений деятельности, доводим до вашего " +
+        "сведения, что принятие решения по данному вопросу будет " +
+        "произведено в конечном счёте.";
+
+      const result = await pipeline.compress(input, config);
+      expect(result.stats.reductionPercent).toBeGreaterThan(20);
+    });
   });
 
   describe("English compression unchanged", () => {
