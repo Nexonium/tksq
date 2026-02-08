@@ -26,7 +26,7 @@ function resolveLanguage(setting: LanguageSetting, text: string): LanguageCode {
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "tksq",
-    version: "1.3.0",
+    version: "1.3.1",
   });
 
   const pipeline = new Pipeline();
@@ -890,6 +890,168 @@ export function createServer(): McpServer {
           error instanceof Error ? error.message : String(error);
         return {
           content: [{ type: "text", text: `Dashboard error: ${message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // -- tksq_agent_prompt --
+
+  const AGENT_PROMPTS: Record<string, Record<string, string>> = {
+    child: {
+      default: [
+        "## Token Optimization Protocol",
+        "",
+        "Before returning your analysis to the parent agent, optimize token usage:",
+        "1. Call tksq_pack with your full response text",
+        "2. Return the packed (compressed) version instead of the original",
+        "3. Code snippets, file paths, and line numbers are preserved automatically",
+        "4. The parent agent reads compressed text without issues",
+        "",
+        "This reduces token costs across the multi-agent pipeline.",
+      ].join("\n"),
+      aggressive: [
+        "## Token Optimization Protocol (Aggressive)",
+        "",
+        "Minimize token usage in your response:",
+        "1. Call tksq_pack on your full response with level 'aggressive'",
+        "2. Return ONLY the compressed text from the result",
+        "3. Omit examples, caveats, and verbose explanations",
+        "4. Focus on findings, conclusions, and actionable items",
+        "5. Code snippets and file paths are preserved automatically",
+      ].join("\n"),
+    },
+    parent: {
+      default: [
+        "## Multi-Agent Token Optimization",
+        "",
+        "When processing results from child agents:",
+        "- Child agents return compressed output via tksq_pack",
+        "- Read compressed text directly (no decompression needed)",
+        "- For your own verbose analysis, call tksq_pack before including in context",
+        "- Use tksq_dashboard to monitor compression savings across the session",
+      ].join("\n"),
+    },
+  };
+
+  server.tool(
+    "tksq_agent_prompt",
+    "Get a ready-made system prompt snippet for multi-agent token optimization. " +
+      "Returns instructions that tell agents to compress their output via tksq. " +
+      "Include the returned text in agent system prompts to enable pipeline-wide compression.",
+    {
+      role: z
+        .enum(["child", "parent"])
+        .describe(
+          "Agent role. child=agent returning results to parent, parent=orchestrating agent"
+        ),
+      style: z
+        .enum(["default", "aggressive"])
+        .optional()
+        .describe(
+          "Compression style. default=balanced (medium level), aggressive=maximum compression"
+        ),
+    },
+    async (args) => {
+      const style = args.style ?? "default";
+      const prompts = AGENT_PROMPTS[args.role];
+      const prompt = prompts[style] ?? prompts["default"];
+
+      return {
+        content: [{ type: "text", text: prompt }],
+      };
+    }
+  );
+
+  // -- tksq_pack --
+
+  server.tool(
+    "tksq_pack",
+    "Compress agent output for efficient return to parent agent. " +
+      "Optimized for multi-agent pipelines: applies medium/aggressive compression " +
+      "while preserving code blocks, file paths, line numbers, and key identifiers. " +
+      "Returns only the compressed text (minimal overhead). " +
+      "Use this as the last step before returning results from a child agent.",
+    {
+      text: z.string().describe("The agent output text to compress"),
+      level: z
+        .enum(["medium", "aggressive"])
+        .optional()
+        .describe(
+          "Compression level. medium=balanced (default), aggressive=maximum reduction"
+        ),
+      language: z
+        .enum(["auto", "en", "ru"])
+        .optional()
+        .describe(
+          "Language. auto=detect (default), en=English, ru=Russian"
+        ),
+    },
+    async (args) => {
+      try {
+        const userConfig = await configManager.load();
+
+        const level: CompressionLevel = args.level ?? "medium";
+        const domain: DomainName = userConfig.domain;
+        const tokenizer: TokenizerType = userConfig.tokenizer;
+        const langSetting: LanguageSetting = args.language ?? userConfig.language;
+        const language = resolveLanguage(langSetting, args.text);
+
+        const customSubs = await getPromotedSubstitutions(
+          userConfig.customSubstitutions
+        );
+
+        const dictionary = DictionaryLoader.load(
+          domain,
+          language,
+          Object.keys(customSubs).length > 0 ? customSubs : undefined
+        );
+
+        // Preserve code blocks, inline code, file paths, line numbers
+        const preservePatterns: RegExp[] = [
+          /`[^`]+`/g, // inline code
+          /```[\s\S]*?```/g, // code blocks
+          /[\w/.\\-]+\.[a-zA-Z]{1,5}(?::\d+)?/g, // file paths with optional line numbers
+          /\bline\s+\d+/gi, // "line 42" references
+        ];
+
+        const pipelineConfig: PipelineConfig = {
+          level,
+          preservePatterns,
+          tokenizer,
+          dictionary,
+        };
+
+        const result = await pipeline.compress(args.text, pipelineConfig);
+
+        // Track stats
+        if (userConfig.learning.enabled) {
+          const tokensSaved =
+            result.stats.originalTokens - result.stats.compressedTokens;
+          await phraseStore.updateStats(
+            tokensSaved,
+            result.stats.originalChars,
+            result.stats.compressedChars
+          );
+          await phraseStore.save();
+        }
+
+        // Return compressed text with minimal metadata footer
+        const output = [
+          result.compressed,
+          "",
+          `[packed: ${result.stats.originalTokens}->${result.stats.compressedTokens} tokens, -${result.stats.reductionPercent}%]`,
+        ].join("\n");
+
+        return {
+          content: [{ type: "text", text: output }],
+        };
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : String(error);
+        return {
+          content: [{ type: "text", text: `Pack error: ${message}` }],
           isError: true,
         };
       }

@@ -1,6 +1,6 @@
 {
   "name": "tksq",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Universal LLM token compression MCP server. Squeeze your tokens.",
   "type": "module",
   "bin": {
